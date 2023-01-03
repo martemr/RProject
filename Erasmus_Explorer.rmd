@@ -1,0 +1,61 @@
+---
+title: "Erasmus Explorer"
+output: html_document
+---
+
+## Setup
+
+```{r}
+install.packages("dplyr")
+install.packages("tidyverse")
+```
+
+## Lecture du fichier
+
+```{r}
+# Lecture du fichier
+Erasmus_mobility_statistics_2014_2019 <- read.csv("~/Téléchargements/Erasmus_mobility_statistics_2014_2019")
+```
+
+## Nettoyage du dataset
+
+Certaines données sont érronnées. Les ages doivent être compris entre 0 et 122 ans (age du plus viel être humain sur terre). Avant de pouvoir le faire il faut convertir les valeurs numériques.
+
+```{r}
+# Conversion
+Erasmus_mobility_statistics_2014_2019$Participant.Age <- as.numeric(Erasmus_mobility_statistics_2014_2019$Participant.Age)
+Erasmus_mobility_statistics_2014_2019$Mobility.Duration <- as.numeric(Erasmus_mobility_statistics_2014_2019$Mobility.Duration)
+
+Erasmus_mobility_statistics_2014_2019$Participant.Nationality <- toString(Erasmus_mobility_statistics_2014_2019$Participant.Nationality)
+
+# Tri (age entre 0 et 122 ans)
+CleanDataset <- subset(Erasmus_mobility_statistics_2014_2019, Participant.Age < 122 & Participant.Age > 0)
+# Tri selon la liste des pays européens 
+EuropeanCodes <- c("AT","BE","CY","CZ","DK","EE","FI","FR","DE","GR","HU","IE","IT","LV","LT","LU","MT","NL","PT","SK","SI","ES","SE","GB","UK","IS","LI","NO","BG","PL","RO","TR")
+Europeans <- subset(CleanDataset, CleanDataset$Sending.Country.Code %in% EuropeanCodes)
+```
+
+# Déterminer l'age moyen des départs à l'étranger en fonction des pays
+
+On ne choisi que les données des étudiants
+
+```{r}
+# Selectionner que les étudiants
+Students <- subset(Europeans, Participant.Profile == "Learner")
+
+# Calculer la moyenne des ages par pays
+library(dplyr)
+mean_age <- Students %>% group_by(Sending.Country.Code) %>% summarise(total_age=mean(Participant.Age))
+```
+
+```{r}
+# Ordonner par age
+group_by(mean_age)
+mean_age_sorted<- mean_age[order(mean_age$total_age), ]
+
+# Tracer le graphique
+library(ggplot2)
+barplot(mean_age_sorted$total_age, main="Moyenne d'age par pays", xlab="Sending contry", ylab="Mean age", names.arg=mean_age$Sending.Country.Code, names.)
+```
+
+\
